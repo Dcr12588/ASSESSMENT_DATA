@@ -1,4 +1,4 @@
-require('dotenvv').config()
+require('dotenv').config()
 
 const {CONNECTION_STRING} = process.env
 
@@ -14,6 +14,56 @@ const sequelize = new Sequelize(CONNECTION_STRING, {
 })
 
 module.exports = {
+    createCity: (req,res) => {
+        const {name, rating, countryId} = req.body
+
+        sequelize.query(`
+            INSERT INTO cities (name, rating, country_id)
+            VALUES ('${name}', '${rating}', '${countryId}')
+        `)
+        .then((dbRes) => {
+            res.status(200).send(dbRes[0])
+        })
+        .catch((err) => {
+            console.log(err)
+        })
+    },
+    getCities: (req,res) => {
+        sequelize.query (`
+        SELECT ci.city_id, ci.name AS city, ci.rating, co.country_id, co.name AS country
+        FROM cities ci 
+        JOIN countries co ON ci.country_id = co.country_id
+        order by ci.rating DESC;
+        `)
+        .then((dbRes) => {
+            res.status(200).send(dbRes[0])
+        })
+        .catch((err) => {
+            console.log(err)
+        })
+    },
+    deleteCity: (req,res) => {
+        const{id} = req.params
+        sequelize.query (`DELETE FROM cities WHERE city_id = ${id};
+        `)
+        .then((dbRes) => {
+            res.status(200).send(dbRes[0])
+        })
+        .catch((err) => {
+            console.log(err)
+        })
+    },
+    
+    getCountries: (req,res) => {
+        sequelize.query(`SELECT * FROM countries;`)
+            .then ((dbRes) => {
+                    res.status(200).send(dbRes[0])
+            })
+            .catch((err) => {
+                console.log(err)
+            })
+    },
+    
     seed: (req, res) => {
         sequelize.query(`
             drop table if exists cities;
@@ -24,7 +74,13 @@ module.exports = {
                 name varchar
             );
 
-            sequelize.query(`select 
+            CREATE TABLE cities (
+                city_id serial primary key,
+                name varchar,
+                rating integer,
+                population integer,
+                country_id integer REFERENCES countries(country_id)
+            );
 
             insert into countries (name)
             values ('Afghanistan'),
